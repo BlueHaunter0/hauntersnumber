@@ -1,56 +1,251 @@
-# The Haunter's Number — $H(3)$
+# The Haunter's Number H(3)
+**Author:** Haunter (`BlueHaunter0`)  
+**Created:** 2026  
+**Status:** Original mathematical construction; finiteness and growth rate not yet established
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Status: Active Specification](https://img.shields.io/badge/Status-Active-success.svg)]()
-[![Googology Wiki](https://img.shields.io/badge/Googology-Wiki%20Spec-orange.svg)](https://googology.miraheze.org/)
+## Abstract
 
-**The Haunter's Number** (denoted as **$H(3)$**) is a formal fast-growing googological function and finite tree-embedding game governed by recursive shadow subtrees and ancestor-preserving topological minor embeddings. 
+The Haunter's Number, denoted \(H(3)\), is a proposed finite tree-embedding game based on recursively shadow-decorated rooted trees. Each vertex has one of three colors and carries a smaller recursive structure called its shadow.
 
-This repository houses the definitive mathematical specification, formal axioms, and reference validation scripts for $H(3)$.
+The construction defines a family of bad sequences: sequences in which no earlier structure embeds into a later one. The size restriction on the \(n\)-th term is \(\|T_n\|\le n\).
 
----
+This document specifies the construction and distinguishes its definition from the currently unproved claims about its finiteness and growth rate.
 
-## 📐 Formal Mathematical Specification
+## 1. Mathematical preliminaries
 
-### 1. The Structure of a Haunter
-A **Haunter** $T$ is defined inductively as a finite rooted tree where each node $v \in V(T)$ possesses two primary attributes:
-* **A color** $c(v)$ mapping to the finite set $\{1, 2, 3\}$.
-* **A shadow** $S(v)$, which is itself a strictly smaller Haunter containing fewer total nodes than the parent tree ($\vert{}V(S(v))\vert{} < \vert{}V(T)\vert{}$). 
+A finite rooted tree is a finite connected acyclic graph with a distinguished vertex called its root.
 
-The empty shadow is denoted as $\emptyset$. By definition, $\emptyset$ is haunted only by $\emptyset$, and no non-empty shadow can contain $\emptyset$ as a valid base component without recursive termination.
+For vertices \(u,v\) of a rooted tree, write:
 
-### 2. The Haunting Relation
-A Haunter $A$ is said to *haunt* another Haunter $B$ (denoted $A \sqsupseteq B$) if and only if there exists an injective topological tree embedding $\phi: V(A) \to V(B)$ such that:
-* **Color Preservation:** For every node $u \in V(A)$, $c(u) = c(\phi(u))$.
-* **Structural Adjacency:** Parent-child edges are preserved under $\phi$.
-* **Ancestor-Preserving Paths:** If node $u$ is an ancestor of node $v$ in $A$, then $\phi(u)$ remains an ancestor of $\phi(v)$ in $B$.
+- \(u\preceq_T v\) if \(u\) is an ancestor of \(v\), including the case \(u=v\).
+- \(u\wedge_T v\) for their greatest common ancestor.
 
-### 3. Sequence Generation and Termination ($H(3)$)
-The growth function generates a sequence of Haunters $(T_1, T_2, T_3, \dots, T_n)$ subject to two strict rules:
-1. **Size Constraint:** The $n$-th Haunter $T_n$ is constrained such that its total node count—including all recursive nesting layers, shadow trees, and sub-shadows—does not exceed $n$:
-   $$\sum_{v \in V(T_n)} \left( 1 + \vert{}V(S(v))\vert{} \right) \leq n$$
-2. **Termination Condition:** The sequence terminates immediately at step $N$ the moment **any** earlier Haunter $T_i$ (where $1 \le i < N$) successfully haunts $T_N$ ($T_i \sqsupseteq T_N$).
+All trees in this specification are finite and rooted.
 
-The value **$H(3)$** represents the maximum possible finite length $N$ that the sequence can achieve before termination is triggered.
+## 2. Definition of a Haunter
 
----
+A **Haunter** \(T\) is a finite rooted tree equipped with two decorations at every vertex \(v\):
 
-## 🐍 Reference Implementation (Python)
+1. A color \(c_T(v)\in\{1,2,3\}\).
+2. A shadow \(S_T(v)\), which is itself a Haunter.
 
-```python
-class HaunterNode:
-    def __init__(self, color: int, shadow=None):
-        if color not in {1, 2, 3}:
-            raise ValueError("Color must be in {1, 2, 3}")
-        self.color = color
-        self.shadow = shadow  # Can be another HaunterNode tree or None (empty shadow)
-        self.children = []    # List of child HaunterNodes
+The recursive construction is required to be well-founded: every shadow must have strictly smaller size than the Haunter containing it.
 
-    def add_child(self, child_node):
-        self.children.append(child_node)
+The empty Haunter is denoted by \(\emptyset\).
 
-    def total_size(self) -> int:
-        """Computes the total node count including recursive shadow layers."""
-        shadow_size = self.shadow.total_size() if self.shadow else 0
-        children_size = sum(c.total_size() for c in self.children)
-        return 1 + shadow_size + children_size
+There are no vertices in \(\emptyset\), and its size is zero.
+
+## 3. Recursive size
+
+Define the size function \(\|\cdot\|\) recursively by
+
+\[
+\|\emptyset\|=0
+\]
+
+and
+
+\[
+\boxed{
+\|T\|=
+\sum_{v\in V(T)}
+\left(1+\|S_T(v)\|\right).
+}
+\]
+
+This counts every vertex and recursively counts all shadow structures attached to it.
+
+The well-foundedness condition requires
+
+\[
+\|S_T(v)\|<\|T\|
+\]
+
+for every vertex \(v\in V(T)\).
+
+### Example
+
+Let \(T\) be a single vertex with color \(1\) and empty shadow.
+
+Then
+
+\[
+\|T\|=1+\|\emptyset\|=1.
+\]
+
+If the root instead has a shadow consisting of a single vertex with empty shadow, then
+
+\[
+\|T\|=1+1=2.
+\]
+
+The shadow is counted recursively, not merely by its number of ordinary tree vertices.
+
+## 4. The haunting relation
+
+Let \(A\) and \(B\) be Haunters.
+
+We say that **\(A\) haunts \(B\)**, written
+
+\[
+A\sqsupseteq B,
+\]
+
+if there exists an injective map
+
+\[
+\phi:V(A)\longrightarrow V(B)
+\]
+
+satisfying all of the following.
+
+### 4.1 Root preservation
+
+The root of \(A\) maps to the root of \(B\):
+
+\[
+\phi(r_A)=r_B.
+\]
+
+### 4.2 Ancestor and meet preservation
+
+For every \(u,v\in V(A)\),
+
+\[
+\phi(u\wedge_A v)
+=
+\phi(u)\wedge_B\phi(v).
+\]
+
+This preserves the rooted branching structure and greatest common ancestors.
+
+### 4.3 Color preservation
+
+For every \(u\in V(A)\),
+
+\[
+c_A(u)=c_B(\phi(u)).
+\]
+
+### 4.4 Shadow preservation
+
+For every \(u\in V(A)\),
+
+\[
+S_A(u)\sqsupseteq S_B(\phi(u)).
+\]
+
+This condition is recursive and terminates because shadows are strictly smaller than their containing Haunters.
+
+### 4.5 Empty structure
+
+The empty Haunter haunts every Haunter, vacuously.
+
+No nonempty Haunter haunts the empty Haunter.
+
+The notation \(\sqsupseteq\) is intentionally used for the haunting relation. It should not be interpreted as ordinary numerical inequality.
+
+## 5. Bad sequences
+
+A sequence
+
+\[
+T_1,T_2,\ldots,T_N
+\]
+
+is a **Haunter bad sequence** if:
+
+1. Each \(T_n\) is a Haunter.
+2. The size restriction holds:
+
+\[
+\|T_n\|\le n.
+\]
+
+3. No earlier Haunter haunts a later one:
+
+\[
+\forall\,1\le i<j\le N,\qquad
+T_i\not\sqsupseteq T_j.
+\]
+
+The sequence terminates when an earlier Haunter first haunts a later Haunter.
+
+## 6. Definition of H(3)
+
+Define
+
+\[
+H(3)=
+\sup\left\{
+N\in\mathbb N:
+\begin{array}{l}
+\text{there exists a Haunter bad sequence}\\
+T_1,\ldots,T_N
+\end{array}
+\right\}.
+\]
+
+Here the supremum is taken in
+
+\[
+\mathbb N\cup\{\infty\}.
+\]
+
+If the set of attainable lengths is bounded, its supremum is the maximum attainable length and \(H(3)\) is a finite natural number.
+
+If the lengths are unbounded, the definition gives
+
+\[
+H(3)=\infty.
+\]
+
+Thus the finiteness of \(H(3)\) is a mathematical question rather than an assumption built into its definition.
+
+## 7. Relation to established mathematics
+
+The construction is inspired by bad-sequence problems and tree-embedding results in googology.
+
+Relevant background includes:
+
+- Kruskal's Tree Theorem, which establishes a well-quasi-ordering result for finite trees under appropriate tree embeddings.
+- Nash-Williams's proof of the well-quasi-ordering of finite trees.
+- Higman's lemma, concerning well-quasi-orderings of finite sequences over well-quasi-ordered sets.
+
+These results motivate the construction but do not automatically establish the well-quasi-ordering of recursively shadow-decorated Haunters.
+
+## 8. Finiteness status
+
+**The finiteness of \(H(3)\) is not established in this specification.**
+
+A proof would need to establish that the haunting relation is a well-quasi-order on the entire recursively defined class of Haunters.
+
+The recursive shadow condition introduces additional structure beyond ordinary finite rooted trees. In particular, an argument using Kruskal's Tree Theorem must justify why the recursive shadow labels satisfy the hypotheses of the applicable tree-embedding theorem.
+
+Until such a proof is completed, \(H(3)\) should not be claimed to be finite.
+
+## 9. Growth-rate status
+
+No established comparison with the TREE sequence, the fast-growing hierarchy, or other major googological functions is claimed here.
+
+The construction is intended as a candidate for further investigation in combinatorial googology.
+
+A growth-rate classification requires explicit mathematical upper or lower bounds.
+
+## 10. Creator and source
+
+The Haunter's Number was created by Haunter (`BlueHaunter0`) in 2026.
+
+This README is the primary specification of the construction. It is self-published and has not been peer-reviewed.
+
+The definition and any future changes should be versioned to preserve reproducibility.
+
+## References
+
+1. Kruskal, J. B. (1960). “Well-quasi-ordering, the tree theorem, and Vázsonyi's conjecture.” *Transactions of the American Mathematical Society*, 95(2), 210–225. https://doi.org/10.1090/S0002-9947-1960-0111704-6
+
+2. Nash-Williams, C. St. J. A. (1963). “On well-quasi-ordering finite trees.” *Proceedings of the Cambridge Philosophical Society*, 59(4), 833–835. https://doi.org/10.1017/S0000000000003844
+
+3. Higman, G. (1952). “Ordering by divisibility in abstract algebras.” *Proceedings of the London Mathematical Society*, 3(2), 326–336.
+
+4. Haunter (`BlueHaunter0`). “The Haunter's Number H(3): Formal Specification.” GitHub repository, 2026. https://github.com/BlueHaunter0/hauntersnumber
